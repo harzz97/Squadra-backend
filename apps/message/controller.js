@@ -4,30 +4,58 @@ exports.getMessage = (req,res) => {
     let db = res.app.locals.db
     var requestBody = req.body
     var conversationReference = db.collection("messages")
+    query = conversationReference.where("conversation",'==',requestBody.conversationID).orderBy('time','desc')
+    //if we want to get previous set of messages check for the last msg id
+    if(requestBody.lastID){
+        console.log("LAST ID ",requestBody.lastID)
+        conversationReference.doc(requestBody.lastID).get()
+        .then(doc => {
+                if(doc.exists){
+                    fetchMessage({query,doc},(result)=>{
+                        res.json(result)
+                    })
+                }
+            }
+        )
+    }else{
+        fetchMessage({query},(result => {
+            res.json(result)
+        }))
+    }
+}
+
+function fetchMessage(val,callback) {
     var messageList = []
-    conversationReference.where("conversation",'==',requestBody.conversationID).get().then(
+    query =val.query
+    if(val.doc){
+        query = query.startAfter(doc)
+    }
+    query.limit(5).get().then(
         snapshot => {
             if(!snapshot.empty){
+                var count  = 0
                 for (doc of snapshot.docs){
-                    messageList.push(doc.data())
+                    var obj = doc.data()
+                    obj.id = doc.id
+                    messageList.push(obj)
+                    count++;
                 }
-                res.json({hasMessages:true,messageList})
+                callback({hasMessages:true,count,messageList})
 
             }else{
-                res.json({hasMessages:false})
+                callback({hasMessages:false})
             }
         }
     )
+} 
 
-}
 //send message
 exports.sendMessage = (req,res)=>{
     let db = res.app.locals.db
     var requestBody = req.body
     var messagesCollection = db.collection("messages")
-    
     var message = {
-        author : req.user.userId,
+        author : req.user.data.userId,
         parent: requestBody.parent,
         message: requestBody.message,
         conversation : requestBody.conversation,
@@ -116,7 +144,8 @@ exports.createChannel = (req,res)=>{
             description: requestObject.description ,
             members: requestObject.members,
             type : requestObject.type,
-            count:requestObject.members.length
+            count:requestObject.members.length,
+            createdAt: new Date()
         }
         var conversationCollection = db.collection("conversations")
         conversationCollection.add(channel).then(
