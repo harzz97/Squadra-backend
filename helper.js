@@ -22,9 +22,20 @@ module.exports.generateJWT = function(user,id){
     return token 
 }
 
-module.exports.verifyJWT = function(token){
-    var isValid = jwt.verify(token,process.env['AUTH-SECRET'])
-    console.log(isValid)
+module.exports.verifyJWT = function(req, res, next) {
+    if(req.headers && req.headers.authorization) {
+        jwt.verify(req.headers.authorization, process.env['AUTH-SECRET'], function(err, decoded) {
+            if(!err) {
+                req.user = decoded
+                req.user.isAuthenticated = true
+                return
+            } 
+            req.user = {isAuthenticated: false}
+        })
+    } else {
+        req.user = {isAuthenticated: false}
+    }    
+    next()
 }
 
 exports.requireAuth = function (req,res,next) {
