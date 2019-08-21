@@ -1,6 +1,5 @@
 var bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
-var jwtPassphrase = 'northkorea'
 var rounds = 8
 module.exports.generateHash = function (password)  {
     
@@ -19,11 +18,18 @@ module.exports.generateJWT = function(user,id){
             email: user.email
         }
     }
-    var token = jwt.sign(payload,jwtPassphrase)
+    var token = jwt.sign(payload,process.env['AUTH-SECRET'])
     return token 
 }
 
 module.exports.verifyJWT = function(token){
-    var isValid = jwt.verify(token,jwtPassphrase)
+    var isValid = jwt.verify(token,process.env['AUTH-SECRET'])
     console.log(isValid)
+}
+
+exports.requireAuth = function (req,res,next) {
+    if(req.user.isAuthenticated)
+        return next()
+    else
+        return res.status(401).json({success:false,message:"Unauthorized"})
 }
