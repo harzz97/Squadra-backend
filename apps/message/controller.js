@@ -11,13 +11,10 @@ exports.getMessage = (req,res) => {
                 for (doc of snapshot.docs){
                     messageList.push(doc.data())
                 }
-                res.json(messageList)
+                res.json({hasMessages:true,messageList})
 
             }else{
-                //TODO:create method to get username
-                res.json({
-                    message:"This is the very beginning of your direct message with "
-                })
+                res.json({hasMessages:false})
             }
         }
     )
@@ -28,15 +25,16 @@ exports.sendMessage = (req,res)=>{
     let db = res.app.locals.db
     var requestBody = req.body
     var messagesCollection = db.collection("messages")
-    //TODO: send date and time object from client end also author id 
+    
     var message = {
-        author : "jBYCCoV9TJPLVj7N5lwi",
-        parent: null,
+        author : req.user.userId,
+        parent: requestBody.parent,
         message: requestBody.message,
         conversation : requestBody.conversation,
         read : false,
         time : new Date()
     }
+
     messagesCollection.add(message).then(
         result => {
             console.log(" Message ID",result.id)
