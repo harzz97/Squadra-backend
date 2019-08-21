@@ -52,7 +52,8 @@ exports.signup = (req, res) => {
                         password: helper.generateHash(requestBody.password),
                         name: requestBody.name,
                         displayName: requestBody.name,
-                        isAdmin : false
+                        isAdmin : false,
+                        createdAt: new Date()
                     }
                 
                     membersCollection.add(user).then(
@@ -60,7 +61,6 @@ exports.signup = (req, res) => {
                             console.log("User ID: ",val.id)
                             res.json({success:true,message:"User created successfully"})
                         })    
-                    //TODO:after successful signup navigate user to dashboard
                 }
         }
     )
